@@ -17,29 +17,36 @@ using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using Utils;
 using Object = UnityEngine.Object;
 
 namespace Assets
 {
     public class Main : MonoBehaviour
     {
-        public void Start()
-        {
-            Config.Load();
+        public CanvasGroup CompatibilityScreen;
 
-            MapRenderer.InitCameras();
+        public void ContinueAfterTest()
+        {
+            CompatibilityScreen.alpha = 0;
+            CompatibilityScreen.interactable = false;
+            CompatibilityScreen.blocksRaycasts = false;
+
+            ResetRequiredSettings.Reset();
+
+            Config.Load();
             FeatureManager.Init();
 
+            MapRenderer.InitCameras();
             ThingTypeRender.Init();
-
-            ThingTypeManager.LoadingComplete += ThingTypeManager_LoadingComplete;
-
             ThingTypeManager.Init();
+            ThingTypeManager.LoadingComplete += ThingTypeManager_LoadingComplete;
+            AtlasSpriteManager.LoadingComplete += AtlasSpriteManager_LoadingComplete;
 
             LoadingCircle.Global.Visible = true;
-            ThingTypeManager.OpenThingsFile(File.OpenRead(Path.Combine(Application.streamingAssetsPath, "Things", Config.ClientVersion.ToString(), "Tibia.dat")));
 
-            AtlasSpriteManager.LoadingComplete += AtlasSpriteManager_LoadingComplete;
+
+            ThingTypeManager.OpenThingsFile(File.OpenRead(Path.Combine(Application.streamingAssetsPath, "Things", Config.ClientVersion.ToString(), "Tibia.dat")));
 
 
             using (System.IO.FileStream fs = new FileStream(Path.Combine(Application.streamingAssetsPath, "Things", Config.ClientVersion.ToString(), "Tibia.aspr"), FileMode.Open, FileAccess.Read))
@@ -49,6 +56,24 @@ namespace Assets
             }
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+        }
+
+        public void Exit()
+        {
+            Application.Quit();
+        }
+        public void Start()
+        {
+
+            if(!SystemInfoTest.Test())
+            {
+                CompatibilityScreen.alpha = 1;
+                CompatibilityScreen.interactable = true;
+                CompatibilityScreen.blocksRaycasts = true;
+                return;
+            }
+
+            ContinueAfterTest();
 
         }
 
